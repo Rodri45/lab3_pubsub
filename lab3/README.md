@@ -63,6 +63,3 @@ Todas las funciones provienen de las librerías estándar de POSIX/BSD sockets i
 | `pthread_mutex_lock(mutex)` | Adquiere el mutex para acceso exclusivo a datos compartidos |
 | `pthread_mutex_unlock(mutex)` | Libera el mutex |
 
-### Puertos utilizados
-- **TCP**: Puerto 8080
-- **UDP**: Puerto 9090
