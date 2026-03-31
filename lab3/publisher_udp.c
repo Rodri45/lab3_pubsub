@@ -7,14 +7,14 @@
 
 #define PORT 9090
 #define BUFFER_SIZE 1024
-
+// Estructura para representar un cliente (publicador o suscriptor)
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         printf("Uso: %s <IP_BROKER> <TEMA>\n", argv[0]);
         printf("Ejemplo: %s 127.0.0.1 RealMadridVsManCity\n", argv[0]);
         return 1;
     }
-
+// 1. Validar argumentos
     char *broker_ip = argv[1];
     char *topic = argv[2];
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
         perror("[Publisher UDP] Error creando socket");
         exit(EXIT_FAILURE);
     }
-
+// 2. Configurar dirección del broker
     memset(&broker_addr, 0, sizeof(broker_addr));
     broker_addr.sin_family = AF_INET;
     broker_addr.sin_port = htons(PORT);
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
+// 3. Enviar mensaje de registro como publicador
     printf("[Publisher UDP] Listo para enviar al broker %s:%d\n", broker_ip, PORT);
 
     snprintf(buffer, BUFFER_SIZE, "PUB|%s", topic);
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     tv.tv_sec = 2;
     tv.tv_usec = 0;
     setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-
+//  Esperar ACK del broker (opcional en UDP, pero útil para depuración)
     memset(buffer, 0, BUFFER_SIZE);
     int bytes = recvfrom(sock_fd, buffer, BUFFER_SIZE - 1, 0, NULL, NULL);
     if (bytes > 0) {
@@ -60,11 +60,11 @@ int main(int argc, char *argv[]) {
     } else {
         printf("[Publisher UDP] No se recibió ACK del broker (normal en UDP).\n");
     }
-
+//  4. Enviar eventos del partido
     tv.tv_sec = 0;
     tv.tv_usec = 0;
     setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-
+// Calcular número de eventos
     const char *eventos[] = {
         "#1 Inicio del partido. Pitazo inicial del arbitro.",
         "#2 Minuto 5: Tiro de esquina para el equipo local.",
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     int num_eventos = sizeof(eventos) / sizeof(eventos[0]);
 
     printf("\n[Publisher UDP] Enviando %d eventos del partido '%s'...\n\n", num_eventos, topic);
-
+// Enviar cada evento como un datagrama UDP al broker
     for (int i = 0; i < num_eventos; i++) {
         snprintf(buffer, BUFFER_SIZE, "MSG|%s|%s", topic, eventos[i]);
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
         sleep(2);
     }
-
+// 6. Cerrar socket
     printf("\n[Publisher UDP] Todos los eventos enviados. Cerrando.\n");
 
     close(sock_fd);

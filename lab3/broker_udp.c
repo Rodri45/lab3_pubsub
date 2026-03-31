@@ -11,7 +11,8 @@
 #define MAX_TOPICS 10
 #define TOPIC_LEN 64
 
-)
+
+// Estructura para representar un suscriptor
 typedef struct {
     struct sockaddr_in addr;               
     char topics[MAX_TOPICS][TOPIC_LEN];    
@@ -19,10 +20,10 @@ typedef struct {
     int active;                            
 } subscriber_t;
 
-
+// Lista de suscriptores
 subscriber_t subscribers[MAX_SUBSCRIBERS];
 int sub_count = 0;
-
+// Busca un suscriptor por su dirección
 int find_subscriber(struct sockaddr_in *addr) {
     for (int i = 0; i < sub_count; i++) {
         if (subscribers[i].active &&
@@ -33,7 +34,7 @@ int find_subscriber(struct sockaddr_in *addr) {
     }
     return -1;
 }
-
+// Agrega un nuevo suscriptor a la lista
 int add_subscriber(struct sockaddr_in *addr) {
     if (sub_count >= MAX_SUBSCRIBERS) return -1;
     int idx = sub_count;
@@ -43,7 +44,7 @@ int add_subscriber(struct sockaddr_in *addr) {
     sub_count++;
     return idx;
 }
-
+// Reenvía un mensaje a todos los suscriptores interesados en el tema
 void broadcast_to_subscribers(int sock_fd, const char *topic, const char *message) {
     for (int i = 0; i < sub_count; i++) {
         if (!subscribers[i].active) continue;
@@ -65,7 +66,7 @@ void broadcast_to_subscribers(int sock_fd, const char *topic, const char *messag
     }
 }
 
-
+// Función principal del broker UDP
 int main() {
     int sock_fd;
     struct sockaddr_in server_addr, client_addr;
@@ -76,7 +77,7 @@ int main() {
         perror("[Broker UDP] Error creando socket");
         exit(EXIT_FAILURE);
     }
-
+// Permitir reutilizar la dirección
     int opt = 1;
     setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
@@ -90,7 +91,7 @@ int main() {
         close(sock_fd);
         exit(EXIT_FAILURE);
     }
-
+// Mensaje de inicio
     printf("=== BROKER UDP iniciado en puerto %d ===\n", PORT);
     printf("Esperando datagramas de publicadores y suscriptores...\n\n");
 

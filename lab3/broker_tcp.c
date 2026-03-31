@@ -1,3 +1,4 @@
+// broker_tcp.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,9 +13,9 @@
 #define MAX_TOPICS 10
 #define TOPIC_LEN 64
 
-
+// Estructura para almacenar información de cada cliente
 typedef enum { CLIENT_PUB, CLIENT_SUB } client_type_t;
-
+// Estructura para representar un cliente (publicador o suscriptor)
 typedef struct {
     int fd;                          
     client_type_t type;              
@@ -22,9 +23,9 @@ typedef struct {
     int topic_count;                
     int active;                      
 } client_t;
+// Lista de clientes conectados
 
-
-
+// Mutex para proteger el acceso a la lista de clientes
 client_t clients[MAX_CLIENTS];
 int client_count = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -44,14 +45,14 @@ int add_client(int fd) {
     pthread_mutex_unlock(&clients_mutex);
     return idx;
 }
-
+// Elimina un cliente de la lista y cierra su socket
 void remove_client(int idx) {
     pthread_mutex_lock(&clients_mutex);
     clients[idx].active = 0;
     close(clients[idx].fd);
     pthread_mutex_unlock(&clients_mutex);
 }
-
+// Reenvía un mensaje a todos los suscriptores interesados en el tema
 void broadcast_to_subscribers(const char *topic, const char *message) {
     pthread_mutex_lock(&clients_mutex);
     for (int i = 0; i < client_count; i++) {
@@ -72,7 +73,7 @@ void broadcast_to_subscribers(const char *topic, const char *message) {
     pthread_mutex_unlock(&clients_mutex);
 }
 
-
+//  Maneja la comunicación con un cliente (publicador o suscriptor)
 void *handle_client(void *arg) {
     int idx = *(int *)arg;
     free(arg);
@@ -160,7 +161,7 @@ void *handle_client(void *arg) {
     return NULL;
 }
 
-
+// Función principal del broker TCP
 int main() {
     int server_fd, new_fd;
     struct sockaddr_in server_addr, client_addr;

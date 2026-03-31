@@ -8,29 +8,29 @@
 
 #define PORT 9090
 #define BUFFER_SIZE 1024
-
+// Estructura para representar un cliente (publicador o suscriptor)
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         printf("Uso: %s <IP_BROKER> <TEMA1,TEMA2,...>\n", argv[0]);
         printf("Ejemplo: %s 127.0.0.1 RealMadridVsManCity\n", argv[0]);
         return 1;
     }
-
+// 1. Validar argumentos
     char *broker_ip = argv[1];
     char *topics = argv[2];
-
+// 2. Configurar socket UDP
     int sock_fd;
     struct sockaddr_in broker_addr, from_addr;
     socklen_t addr_len = sizeof(broker_addr);
     socklen_t from_len = sizeof(from_addr);
     char buffer[BUFFER_SIZE];
-
+// 3. Crear socket UDP
     sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock_fd < 0) {
         perror("[Subscriber UDP] Error creando socket");
         exit(EXIT_FAILURE);
     }
-
+// 4. Configurar dirección del broker
     memset(&broker_addr, 0, sizeof(broker_addr));
     broker_addr.sin_family = AF_INET;
     broker_addr.sin_port = htons(PORT);
@@ -40,19 +40,19 @@ int main(int argc, char *argv[]) {
         close(sock_fd);
         exit(EXIT_FAILURE);
     }
-
+// 5. Enviar mensaje de registro como suscriptor
     printf("[Subscriber UDP] Listo, broker en %s:%d\n", broker_ip, PORT);
-
+// Enviar solicitud de suscripción
     snprintf(buffer, BUFFER_SIZE, "SUB|%s", topics);
     sendto(sock_fd, buffer, strlen(buffer), 0,
            (struct sockaddr *)&broker_addr, addr_len);
     printf("[Subscriber UDP] Solicitud de suscripción enviada: %s\n", topics);
-
+// Esperar ACK del broker 
     struct timeval tv;
     tv.tv_sec = 3;
     tv.tv_usec = 0;
     setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-
+//  Esperar respuesta del broker
     memset(buffer, 0, BUFFER_SIZE);
     int bytes = recvfrom(sock_fd, buffer, BUFFER_SIZE - 1, 0,
                          (struct sockaddr *)&from_addr, &from_len);
@@ -62,13 +62,13 @@ int main(int argc, char *argv[]) {
     } else {
         printf("[Subscriber UDP] No se recibió confirmación (normal en UDP).\n");
     }
-
+// 6. Recibir mensajes del broker
     tv.tv_sec = 0;
     tv.tv_usec = 0;
     setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     printf("[Subscriber UDP] Esperando mensajes...\n\n");
-
+// Contador de mensajes recibidos
     int msg_count = 0;
     while (1) {
         memset(buffer, 0, BUFFER_SIZE);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
             printf("\n");
         }
     }
-
+// 7. Cerrar socket (nunca se llega aquí en este ejemplo, pero es buena práctica)
     printf("[Subscriber UDP] Total de mensajes recibidos: %d\n", msg_count);
 
     close(sock_fd);
